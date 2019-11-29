@@ -83,4 +83,17 @@ bool qfi_done(quotient_filter *qf, qf_iterator *i);
  */
 uint64_t qfi_next(quotient_filter *qf, qf_iterator *i);
 
+/* Check if @lhs is a subset of @rhs */
+bool qf_is_subsetof(quotient_filter *lhs, quotient_filter *rhs);
+
+/*
+ * Initializes qf_out and copies over all elements from qf1 and qf2.
+ * Caution: qf_out holds twice as many entries as either qf1 or qf2.
+ *
+ * Returns false on ENOMEM.
+ */
+bool qf_merge(quotient_filter *qf_out, quotient_filter *qf1, quotient_filter *qf2);
+
+bool qf_is_consistent(quotient_filter *qf);
+
 #endif

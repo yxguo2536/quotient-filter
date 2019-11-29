@@ -442,3 +442,83 @@ uint64_t qfi_next(quotient_filter *qf, qf_iterator *i)
     /* shall not reach here */
     abort();
 }
+
+/* Check if @lhs is a subset of @rhs */
+bool qf_is_subsetof(quotient_filter *lhs,
+                    quotient_filter *rhs)
+{
+    qf_iterator lqfi;
+
+    qfi_start(lhs, &lqfi);
+    while(!qfi_done(lhs, &lqfi)){
+        if(!qf_may_contain(rhs, qfi_next(lhs, &lqfi))){
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/*
+ * Initializes qf_out and copies over all elements from qf1 and qf2.
+ * Caution: qf_out holds twice as many entries as either qf1 or qf2.
+ *
+ * Returns false on ENOMEM.
+ */
+bool qf_merge(quotient_filter *qf_out,
+              quotient_filter *qf1,
+              quotient_filter *qf2)
+{
+    qf_iterator qfi;
+
+    uint32_t q = MAX(qf1->qbits, qf2->qbits);
+    uint32_t r = MAX(qf1->rbits, qf2->rbits);
+    if(!qf_init(qf_out, q, r)){
+        return false;
+    }
+
+    qfi_start(qf1, &qfi);
+    while(!qfi_done(qf1, &qfi)){
+        qf_insert(qf_out, qfi_next(qf1, &qfi));
+    }
+
+    qfi_start(qf2, &qfi);
+    while(!qfi_done(qf2, &qfi)){
+        qf_insert(qf_out, qfi_next(qf2, &qfi));
+    }
+
+    return true;
+}
+
+bool qf_is_consistent(quotient_filter *qf) {
+    // Make sure all the properties of quotient_filter exist (non-zero)
+    assert(qf->qbits);
+    assert(qf->rbits);
+    assert(qf->elem_bits);
+    assert(qf->qf_table);
+    assert(qf->index_mask);
+    assert(qf->elem_mask);
+    assert(qf->rmask);
+
+    // Make sure entry counter doesn't exceed max size
+    assert(qf->entries <= qf->max_size);
+
+    // When entry counter is 0, make sure no elements contain in table
+    // When entry counter isn't 0, make sure all elements' metabits is legal
+    if (qf->entries == 0) {
+        for (uint64_t start = 0; start < qf->max_size; ++start)
+            if (get_elem(qf, start) != 0) return false;
+        return true;
+    }else{
+        qf_iterator qfi;
+        qfi_start(qf, &qfi);
+        while(!qfi_done(qf, &qfi)){
+            uint64_t elt = qfi_next(qf, &qfi);
+            if( is_continuation(elt) &&
+                !is_shifted(elt) ) {    // if `is_continuation` is set, `is_shifted` must be set too.
+                return false;
+            }
+        }
+        return true;
+    }
+}
