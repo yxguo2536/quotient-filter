@@ -357,13 +357,13 @@ bool qf_remove(quotient_filter *qf, uint64_t hash)
 
     /* If we are deleting the last entry in a run, clear `is_occupied'. */
     if (is_run_start(kill)) {
-        /* Write your code here */	    
+        /* Write your code here */
     }
 
     delete_entry(qf, s, fq);
 
     if (replace_run_start) {
-        /* Write your code here */	    
+        /* Write your code here */
     }
 
     --qf->entries;
@@ -508,19 +508,29 @@ bool qf_is_consistent(quotient_filter *qf) {
     // When entry counter is 0, make sure no elements contain in table
     // When entry counter isn't 0, make sure all elements' metabits is legal
     if (qf->entries == 0) {
-        for (uint64_t start = 0; start < qf->max_size; ++start)
-            if (get_elem(qf, start) != 0) return false;
-        return true;
+        // do a comparision per 8 bytes
+        size_t table_size = qf_table_size(qf->qbits, qf->rbits);
+        uint8_t *ptr;
+        for(ptr = (uint8_t *)qf->table; ptr < (uint8_t *)qf->table + table_size - 8; ptr+=8){
+            if (*(uint64_t *)ptr) return false;
+        }
+        if(table_size % 8){
+            uint64_t zeroblock = 0;
+            return !memcmp(ptr, &zeroblock, table_size % 8);
+        }
     }else{
-        qf_iterator qfi;
-        qfi_start(qf, &qfi);
-        while(!qfi_done(qf, &qfi)){
-            uint64_t elt = qfi_next(qf, &qfi);
-            if( is_continuation(elt) &&
-                !is_shifted(elt) ) {    // if `is_continuation` is set, `is_shifted` must be set too.
-                return false;
-            }
+        for (uint64_t start = 0; start< qf->max_size; ++start){
+            uint64_t ele = get_elem(qf, start);
+            // Find elements that have invalid metadata bits:
+            // (is_occupied,is_continuation,is_shifted) = (0,1,0) or (1,1,0)
+            uint64_t metadata = ele & 7;
+            if ( metadata == 2 || metadata == 3 ) return false;
+            // We also define the remainder of a slot as zero if the slot is empty
+            if ( !metadata && get_remainder(ele) ) return false;
         }
         return true;
     }
+
+    /* shall not reach here */
+    abort();
 }
