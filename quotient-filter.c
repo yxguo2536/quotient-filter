@@ -1,9 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "quotient-filter.h"
 
 #define LOW_MASK(n) ((1ULL << (n)) - 1ULL)
+#define MAX(a,b) a>=b?a:b
 
 struct __qf_iterator {
     uint64_t index;
@@ -495,7 +497,7 @@ bool qf_is_consistent(quotient_filter *qf) {
     assert(qf->qbits);
     assert(qf->rbits);
     assert(qf->elem_bits);
-    assert(qf->qf_table);
+    assert(qf->table);
     assert(qf->index_mask);
     assert(qf->elem_mask);
     assert(qf->rmask);
