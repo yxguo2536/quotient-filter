@@ -357,7 +357,9 @@ bool qf_remove(quotient_filter *qf, uint64_t hash)
 
     /* If we are deleting the last entry in a run, clear `is_occupied'. */
     if (is_run_start(kill)) {
-        /* Write your code here */
+        uint64_t next = get_elem(qf, incr(qf, s));
+        T_fq &= ~1ULL | (next & 2ULL) >> 1;
+        set_elem(qf, fq, T_fq);
     }
 
     delete_entry(qf, s, fq);
