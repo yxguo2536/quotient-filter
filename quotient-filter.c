@@ -365,7 +365,14 @@ bool qf_remove(quotient_filter *qf, uint64_t hash)
     delete_entry(qf, s, fq);
 
     if (replace_run_start) {
-        /* Write your code here */
+        uint64_t next = get_elem(qf, s);
+        /* Clear continuation bit. */
+        next &= ~2;
+        if (s==fq && is_run_start(next)) {
+            /* The new start is in the canonical slot. */
+            next &= ~4;
+        }
+        set_elem(qf, s, next);
     }
 
     --qf->entries;
