@@ -527,6 +527,7 @@ bool qf_is_consistent(quotient_filter *qf) {
             uint64_t zeroblock = 0;
             return !memcmp(ptr, &zeroblock, table_size % 8);
         }
+        return true;
     }else{
         for (uint64_t start = 0; start< qf->max_size; ++start){
             uint64_t ele = get_elem(qf, start);
