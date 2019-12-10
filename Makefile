@@ -1,12 +1,15 @@
 CFLAGS = -Wall -O2 -std=gnu99 -g
+CFLAGS += -I./include
 
 all: bench
 
-quotient-filter.o: quotient-filter.c quotient-filter.h
+obj/%.o: src/%.c include/%.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-bench: quotient-filter.o bench.c
+bench: obj/quotient-filter.o src/bench.c
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
-	$(RM) quotient-filter.o bench
+	$(RM) obj/*.o obj/*.so bench
+
+

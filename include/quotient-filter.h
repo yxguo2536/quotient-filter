@@ -92,7 +92,9 @@ bool qf_is_subsetof(quotient_filter *lhs, quotient_filter *rhs);
  *
  * Returns false on ENOMEM.
  */
-bool qf_merge(quotient_filter *qf_out, quotient_filter *qf1, quotient_filter *qf2);
+bool qf_merge(quotient_filter *qf_out,
+              quotient_filter *qf1,
+              quotient_filter *qf2);
 
 bool qf_is_consistent(quotient_filter *qf);
 

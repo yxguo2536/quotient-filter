@@ -1,8 +1,10 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "quotient-filter.h"
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define LOW_MASK(n) ((1ULL << (n)) - 1ULL)
 
 struct __qf_iterator {
@@ -355,13 +357,13 @@ bool qf_remove(quotient_filter *qf, uint64_t hash)
 
     /* If we are deleting the last entry in a run, clear `is_occupied'. */
     if (is_run_start(kill)) {
-        /* Write your code here */	    
+        /* Write your code here */
     }
 
     delete_entry(qf, s, fq);
 
     if (replace_run_start) {
-        /* Write your code here */	    
+        /* Write your code here */
     }
 
     --qf->entries;
@@ -444,14 +446,13 @@ uint64_t qfi_next(quotient_filter *qf, qf_iterator *i)
 }
 
 /* Check if @lhs is a subset of @rhs */
-bool qf_is_subsetof(quotient_filter *lhs,
-                    quotient_filter *rhs)
+bool qf_is_subsetof(quotient_filter *lhs, quotient_filter *rhs)
 {
     qf_iterator lqfi;
 
     qfi_start(lhs, &lqfi);
-    while(!qfi_done(lhs, &lqfi)){
-        if(!qf_may_contain(rhs, qfi_next(lhs, &lqfi))){
+    while (!qfi_done(lhs, &lqfi)) {
+        if (!qf_may_contain(rhs, qfi_next(lhs, &lqfi))) {
             return false;
         }
     }
@@ -473,29 +474,30 @@ bool qf_merge(quotient_filter *qf_out,
 
     uint32_t q = MAX(qf1->qbits, qf2->qbits);
     uint32_t r = MAX(qf1->rbits, qf2->rbits);
-    if(!qf_init(qf_out, q, r)){
+    if (!qf_init(qf_out, q, r)) {
         return false;
     }
 
     qfi_start(qf1, &qfi);
-    while(!qfi_done(qf1, &qfi)){
+    while (!qfi_done(qf1, &qfi)) {
         qf_insert(qf_out, qfi_next(qf1, &qfi));
     }
 
     qfi_start(qf2, &qfi);
-    while(!qfi_done(qf2, &qfi)){
+    while (!qfi_done(qf2, &qfi)) {
         qf_insert(qf_out, qfi_next(qf2, &qfi));
     }
 
     return true;
 }
 
-bool qf_is_consistent(quotient_filter *qf) {
+bool qf_is_consistent(quotient_filter *qf)
+{
     // Make sure all the properties of quotient_filter exist (non-zero)
     assert(qf->qbits);
     assert(qf->rbits);
     assert(qf->elem_bits);
-    assert(qf->qf_table);
+    assert(qf->table);
     assert(qf->index_mask);
     assert(qf->elem_mask);
     assert(qf->rmask);
@@ -507,15 +509,17 @@ bool qf_is_consistent(quotient_filter *qf) {
     // When entry counter isn't 0, make sure all elements' metabits is legal
     if (qf->entries == 0) {
         for (uint64_t start = 0; start < qf->max_size; ++start)
-            if (get_elem(qf, start) != 0) return false;
+            if (get_elem(qf, start) != 0)
+                return false;
         return true;
-    }else{
+    } else {
         qf_iterator qfi;
         qfi_start(qf, &qfi);
-        while(!qfi_done(qf, &qfi)){
+        while (!qfi_done(qf, &qfi)) {
             uint64_t elt = qfi_next(qf, &qfi);
-            if( is_continuation(elt) &&
-                !is_shifted(elt) ) {    // if `is_continuation` is set, `is_shifted` must be set too.
+            if (is_continuation(elt) &&
+                !is_shifted(elt)) {  // if `is_continuation` is set,
+                                     // `is_shifted` must be set too.
                 return false;
             }
         }
