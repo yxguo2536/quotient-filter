@@ -1,3 +1,6 @@
 bench
+bench2
 *.o
 *~
+data.qf
+data.cqf

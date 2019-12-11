@@ -3,18 +3,22 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "gqf.h"
 #include "gqf_int.h"
+#include "gqf_file.h"
 #include "quotient-filter.h"
+#include "quotient-filter-file.h"
 
+
+#define diff(start, end) ((uint64_t) 1e9*end.tv_sec + end.tv_nsec) - ((uint64_t) 1e9*start.tv_sec + start.tv_nsec);
 static __inline__ unsigned long long rdtsc(void)
 {
     unsigned hi, lo;
     __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
     return ((unsigned long long) lo) | (((unsigned long long) hi) << 32);
 }
-
 
 int main(int argc, char **argv)
 {
@@ -26,9 +30,8 @@ int main(int argc, char **argv)
     uint64_t *keys = NULL;
     uint64_t value_bits = 0;
     uint64_t key_count = 1;
-    uint64_t start_time, end_time;
+    struct timespec start_time, end_time;
     uint64_t qf_time = 0, cqf_time = 0;
-    printf("Inserting %lu elements into QF and CQF :\n", nkeys);
 
     // Initialize
     CQF cqf;
@@ -48,8 +51,9 @@ int main(int argc, char **argv)
     keys = calloc(nkeys, sizeof(uint64_t));
     RAND_bytes((unsigned char *) keys, sizeof(*keys) * nkeys);
 
-    // CQF
-    start_time = rdtsc();
+    // in-memory CQF insert
+    printf("Insert %lu elements into QF and CQF within RAM :\n\n", nkeys);
+    clock_gettime(CLOCK_MONOTONIC, &start_time);
     for (uint64_t i = 0; i < nkeys; i++) {
         int ret = cqf_insert(&cqf, keys[i], 0, key_count,
                              QF_NO_LOCK | QF_KEY_IS_HASH);
@@ -64,12 +68,12 @@ int main(int argc, char **argv)
             abort();
         }
     }
-    end_time = rdtsc();
-    cqf_time = end_time - start_time;
-    printf("CQF insertion done in %lu ns.\n", cqf_time);
+    clock_gettime(CLOCK_MONOTONIC, &end_time);
+    cqf_time = diff(start_time, end_time);
+    printf("CQF insertion done in %.5f sec.\n", (double) 1e-9*cqf_time);
 
-    // QF
-    start_time = rdtsc();
+    // in-memory QF insert
+    clock_gettime(CLOCK_MONOTONIC, &start_time);
     for (uint64_t i = 0; i < nkeys; i++) {
         int ret = qf_insert(&qf, keys[i]);
         if (!ret) {
@@ -77,7 +81,127 @@ int main(int argc, char **argv)
             abort();
         }
     }
-    end_time = rdtsc();
-    qf_time = end_time - start_time;
-    printf("QF insertion done in %lu ns.\n", qf_time);
+    clock_gettime(CLOCK_MONOTONIC, &end_time);
+    qf_time = diff(start_time, end_time);
+    printf("QF insertion done in %.5f sec.\n", (double) 1e-9*qf_time);
+
+    // -------------------------------------------------------
+
+    printf("---------------------------------------------\n");
+    printf("Lookup %lu elements in QF and CQF within RAM :\n\n", nkeys);
+
+    // in-memory CQF lookup
+    clock_gettime(CLOCK_MONOTONIC, &start_time);
+    for(uint64_t i = 0; i<nkeys; i++) {
+        int count = cqf_count_key_value(&cqf, keys[i], 0, QF_KEY_IS_HASH);
+        if(!count){
+            fprintf(stderr, "CQF fail to lookup key : %lx, index. %lu\n", keys[i], keys[i]);
+        }
+    }
+    clock_gettime(CLOCK_MONOTONIC, &end_time);
+    cqf_time = diff(start_time, end_time);
+    printf("CQF lookup done in %.5f sec.\n", (double) 1e-9*cqf_time);
+
+    // in-memory QF lookup
+    clock_gettime(CLOCK_MONOTONIC, &start_time);
+    for(uint64_t i = 0; i<nkeys; i++) {
+        if(!qf_may_contain(&qf, keys[i])) {
+            fprintf(stderr, "QF fail to lookup key : %lx\n", keys[i]);
+        }
+    }
+    clock_gettime(CLOCK_MONOTONIC, &end_time);
+    qf_time = diff(start_time, end_time);
+    printf("QF lookup done in %.5f sec.\n", (double) 1e-9*qf_time);
+
+    cqf_destroy(&cqf);
+    qf_destroy(&qf);
+    
+
+
+
+
+
+    // =======================================================
+    printf("\n---------------------------------------------\n\n");
+
+
+
+
+
+    // Initialize
+    if(!cqf_initfile(&cqf, nslots, key_bits, value_bits, QF_HASH_INVERTIBLE,
+                    0, "data.cqf")) {
+        fprintf(stderr, "Can't allocate set.\n");
+        abort();
+    }
+    if(!qf_initfile(&qf, qbits, rbits, "data.qf")) {
+        fprintf(stderr, "Can't allocate set.\n");
+        abort();   
+    }
+
+    // in-disk CQF insert
+    printf("Insert %lu elements into QF and CQF within disk :\n\n", nkeys);
+    clock_gettime(CLOCK_MONOTONIC, &start_time);
+    for (uint64_t i = 0; i < nkeys; i++) {
+        int ret = cqf_insert(&cqf, keys[i], 0, key_count,
+                             QF_NO_LOCK | QF_KEY_IS_HASH);
+        if (ret < 0) {
+            fprintf(stderr, "failed insertion for key: %lx.\n", keys[i]);
+            if (ret == QF_NO_SPACE)
+                fprintf(stderr, "CQF is full.\n");
+            else if (ret == QF_COULDNT_LOCK)
+                fprintf(stderr, "TRY_ONCE_LOCK failed.\n");
+            else
+                fprintf(stderr, "Does not recognise return value.\n");
+            abort();
+        }
+    }
+    clock_gettime(CLOCK_MONOTONIC, &end_time);
+    cqf_time = diff(start_time, end_time);
+    printf("CQF insertion done in %.5f sec.\n", (double) 1e-9*cqf_time);
+
+    // in-disk QF insert
+    clock_gettime(CLOCK_MONOTONIC, &start_time);
+    for (uint64_t i = 0; i < nkeys; i++) {
+        int ret = qf_insert(&qf, keys[i]);
+        if (!ret) {
+            fprintf(stderr, "failed insertion for key: %lx.\n", keys[i]);
+            abort();
+        }
+    }
+    clock_gettime(CLOCK_MONOTONIC, &end_time);
+    qf_time = diff(start_time, end_time);
+    printf("QF insertion done in %.5f sec.\n", (double) 1e-9*qf_time);
+
+    // -------------------------------------------------------
+
+    printf("---------------------------------------------\n");
+
+    // in-disk CQF lookup
+    printf("Lookup %lu elements in QF and CQF within disk :\n\n", nkeys);
+    clock_gettime(CLOCK_MONOTONIC, &start_time);
+    for(uint64_t i = 0; i<nkeys; i++) {
+        int count = cqf_count_key_value(&cqf, keys[i], 0, QF_KEY_IS_HASH);
+        if(!count){
+            fprintf(stderr, "CQF fail to lookup key : %lx, index. %lu\n", keys[i], keys[i]);
+        }
+    }
+    clock_gettime(CLOCK_MONOTONIC, &end_time);
+    cqf_time = diff(start_time, end_time);
+    printf("CQF lookup done in %.5f sec.\n", (double) 1e-9*cqf_time);
+
+    // in-disk QF lookup
+    clock_gettime(CLOCK_MONOTONIC, &start_time);
+    for(uint64_t i = 0; i<nkeys; i++) {
+        if(!qf_may_contain(&qf, keys[i])) {
+            fprintf(stderr, "QF fail to lookup key : %lx\n", keys[i]);
+        }
+    }
+    clock_gettime(CLOCK_MONOTONIC, &end_time);
+    qf_time = diff(start_time, end_time);
+    printf("QF lookup done in %.5f sec.\n", (double) 1e-9*qf_time);
+
+
+    cqf_closefile(&cqf);
+    qf_closefile(&qf);
 }

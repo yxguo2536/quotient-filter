@@ -10,10 +10,11 @@ obj/%.o: src/%.c include/%.h
 bench: obj/quotient-filter.o src/bench.c
 	$(CC) $(CFLAGS) -o $@ $^
 
-bench2: obj/quotient-filter.o obj/hashutil.o obj/partitioned_counter.o obj/gqf.o src/bench2.c
+bench2: obj/quotient-filter.o obj/quotient-filter-file.o obj/hashutil.o \
+		obj/partitioned_counter.o obj/gqf.o obj/gqf_file.o src/bench2.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:
-	$(RM) obj/*.o obj/*.so bench bench2
+	$(RM) obj/*.o obj/*.so bench bench2 data.qf data.cqf
 
 
