@@ -13,12 +13,6 @@
 
 
 #define diff(start, end) ((uint64_t) 1e9*end.tv_sec + end.tv_nsec) - ((uint64_t) 1e9*start.tv_sec + start.tv_nsec);
-static __inline__ unsigned long long rdtsc(void)
-{
-    unsigned hi, lo;
-    __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
-    return ((unsigned long long) lo) | (((unsigned long long) hi) << 32);
-}
 
 int main(int argc, char **argv)
 {
@@ -84,6 +78,14 @@ int main(int argc, char **argv)
     clock_gettime(CLOCK_MONOTONIC, &end_time);
     qf_time = diff(start_time, end_time);
     printf("QF insertion done in %.5f sec.\n", (double) 1e-9*qf_time);
+
+    // check QF consistency
+    if (qf_is_consistent(&qf)) {
+        fprintf(stdout, "Validated the QF.\n");
+    }else{
+        fprintf(stderr, "QF consistency check failed.\n");
+        abort();
+    }
 
     // -------------------------------------------------------
 
@@ -172,6 +174,14 @@ int main(int argc, char **argv)
     clock_gettime(CLOCK_MONOTONIC, &end_time);
     qf_time = diff(start_time, end_time);
     printf("QF insertion done in %.5f sec.\n", (double) 1e-9*qf_time);
+
+    // check QF consistency
+    if (qf_is_consistent(&qf)) {
+        fprintf(stdout, "Validated the QF.\n");
+    }else{
+        fprintf(stderr, "QF consistency check failed.\n");
+        abort();
+    }
 
     // -------------------------------------------------------
 
