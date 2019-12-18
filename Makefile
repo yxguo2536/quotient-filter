@@ -16,10 +16,6 @@ bench2: obj/quotient-filter.o obj/quotient-filter-file.o obj/hashutil.o \
 		obj/partitioned_counter.o obj/gqf.o obj/gqf_file.o src/bench2.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-bench3: obj/quotient-filter.o obj/quotient-filter-file.o obj/hashutil.o \
-		obj/partitioned_counter.o obj/gqf.o obj/gqf_file.o src/bench3.c
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
 plot-mem:
 	gnuplot script/insert-mem.gp
 	gnuplot script/lookup-mem.gp
