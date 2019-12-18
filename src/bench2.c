@@ -54,6 +54,7 @@ int main(int argc, char **argv)
     FILE *cqfile = fopen(cqf_filename, "w");
     FILE *qfile = fopen(qf_filename, "w");
 
+    srand(0);
     int qbits = 26;
     int rbits = 64 - qbits;
     uint64_t key_bits = qbits + rbits;
@@ -125,8 +126,8 @@ int main(int argc, char **argv)
             // second)
             clock_gettime(CLOCK_MONOTONIC, &start_time);
             uint64_t j;
-            for (j = (uint64_t)(probe - 0.05 * nslots); j <= probe; j++) {
-                if (!qf_may_contain(&qf, keys[j])) {
+            for (j = 0; j <= 0.05 * nslots; j++) {
+                if (!qf_may_contain(&qf, keys[rand() % (uint64_t) probe])) {
                     fprintf(stderr, "QF fail to lookup key : %lx\n", keys[i]);
                     abort();
                 }
@@ -189,9 +190,9 @@ int main(int argc, char **argv)
             // second)
             clock_gettime(CLOCK_MONOTONIC, &start_time);
             uint64_t j;
-            for (j = (uint64_t)(probe - 0.05 * nslots); j <= probe; j++) {
-                int count =
-                    cqf_count_key_value(&cqf, keys[j], 0, QF_KEY_IS_HASH);
+            for (j = 0; j <= 0.05 * nslots; j++) {
+                int count = cqf_count_key_value(
+                    &cqf, keys[rand() % (uint64_t) probe], 0, QF_KEY_IS_HASH);
                 if (!count) {
                     fprintf(stderr,
                             "CQF fail to lookup key : %lx, index. %lu\n",
