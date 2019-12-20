@@ -387,7 +387,7 @@ void qf_clear(quotient_filter *qf)
 
 size_t qf_table_size(uint32_t q, uint32_t r)
 {
-    size_t bits = (1 << q) * (r + 3);
+    size_t bits = (size_t)(1 << q) * (r + 3);
     size_t bytes = bits / 8;
     return (bits % 8) ? (bytes + 1) : bytes;
 }
