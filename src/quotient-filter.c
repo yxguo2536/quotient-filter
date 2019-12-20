@@ -324,7 +324,7 @@ static void delete_entry(quotient_filter *qf, uint64_t s, uint64_t quot)
 bool qf_remove(quotient_filter *qf, uint64_t hash)
 {
     uint64_t highbits = hash >> (qf->qbits + qf->rbits);
-    if (highbits)
+    if (qf->qbits + qf->rbits < 64 && highbits)
         return false;
 
     uint64_t fq = hash_to_quotient(qf, hash);
