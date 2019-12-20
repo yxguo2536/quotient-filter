@@ -21,9 +21,13 @@ extern "C" {
 #endif
 
 /* Initialize a file-backed (i.e. mmapped) CQF at "filename". */
-bool cqf_initfile(CQF *qf, uint64_t nslots, uint64_t key_bits,
-                 uint64_t value_bits, enum cqf_hashmode hash, uint32_t seed,
-                 const char *filename);
+bool cqf_initfile(CQF *qf,
+                  uint64_t nslots,
+                  uint64_t key_bits,
+                  uint64_t value_bits,
+                  enum cqf_hashmode hash,
+                  uint32_t seed,
+                  const char *filename);
 
 #define QF_USEFILE_READ_ONLY (0x01)
 #define QF_USEFILE_READ_WRITE (0x02)
@@ -62,4 +66,4 @@ int qfi_initial_madvise(QFi *qfi);
 }
 #endif
 
-#endif // _GQF_FILE_H_
+#endif  // _GQF_FILE_H_

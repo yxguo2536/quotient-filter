@@ -9,7 +9,10 @@
  *
  * Returns false if q == 0, r == 0, q+r > 64, or file allocation failed.
  */
-bool qf_initfile(quotient_filter *qf, uint32_t q, uint32_t r, const char *filename);
+bool qf_initfile(quotient_filter *qf,
+                 uint32_t q,
+                 uint32_t r,
+                 const char *filename);
 
 
 /**
