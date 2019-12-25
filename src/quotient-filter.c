@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include "quotient-filter.h"
 
@@ -325,7 +324,7 @@ static void delete_entry(quotient_filter *qf, uint64_t s, uint64_t quot)
 bool qf_remove(quotient_filter *qf, uint64_t hash)
 {
     uint64_t highbits = hash >> (qf->qbits + qf->rbits);
-    if (highbits)
+    if (qf->qbits + qf->rbits < 64 && highbits)
         return false;
 
     uint64_t fq = hash_to_quotient(qf, hash);
@@ -369,7 +368,7 @@ bool qf_remove(quotient_filter *qf, uint64_t hash)
         uint64_t next = get_elem(qf, s);
         /* Clear continuation bit. */
         next &= ~2;
-        if (s==fq && is_run_start(next)) {
+        if (s == fq && is_run_start(next)) {
             /* The new start is in the canonical slot. */
             next &= ~4;
         }
@@ -388,7 +387,7 @@ void qf_clear(quotient_filter *qf)
 
 size_t qf_table_size(uint32_t q, uint32_t r)
 {
-    size_t bits = (1 << q) * (r + 3);
+    size_t bits = (size_t)(1 << q) * (r + 3);
     size_t bytes = bits / 8;
     return (bits % 8) ? (bytes + 1) : bytes;
 }
@@ -521,23 +520,28 @@ bool qf_is_consistent(quotient_filter *qf)
         // do a comparision per 8 bytes
         size_t table_size = qf_table_size(qf->qbits, qf->rbits);
         uint8_t *ptr;
-        for(ptr = (uint8_t *)qf->table; ptr < (uint8_t *)qf->table + table_size - 8; ptr+=8){
-            if (*(uint64_t *)ptr) return false;
+        for (ptr = (uint8_t *) qf->table;
+             ptr < (uint8_t *) qf->table + table_size - 8; ptr += 8) {
+            if (*(uint64_t *) ptr)
+                return false;
         }
-        if(table_size % 8){
+        if (table_size % 8) {
             uint64_t zeroblock = 0;
             return !memcmp(ptr, &zeroblock, table_size % 8);
         }
         return true;
-    }else{
-        for (uint64_t start = 0; start< qf->max_size; ++start){
+    } else {
+        for (uint64_t start = 0; start < qf->max_size; ++start) {
             uint64_t ele = get_elem(qf, start);
             // Find elements that have invalid metadata bits:
             // (is_occupied,is_continuation,is_shifted) = (0,1,0) or (1,1,0)
             uint64_t metadata = ele & 7;
-            if ( metadata == 2 || metadata == 3 ) return false;
-            // We also define the remainder of a slot as zero if the slot is empty
-            if ( !metadata && get_remainder(ele) ) return false;
+            if (metadata == 2 || metadata == 3)
+                return false;
+            // We also define the remainder of a slot as zero if the slot is
+            // empty
+            if (!metadata && get_remainder(ele))
+                return false;
         }
         return true;
     }

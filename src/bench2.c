@@ -15,7 +15,7 @@
 
 #define diff_in_nsec(start, end)                  \
     ((uint64_t) 1e9 * end.tv_sec + end.tv_nsec) - \
-        ((uint64_t) 1e9 * start.tv_sec + start.tv_nsec);
+        ((uint64_t) 1e9 * start.tv_sec + start.tv_nsec)
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 // Command option funciton ---------------------------------------
@@ -144,16 +144,6 @@ int main(int argc, char **argv)
             clock_gettime(CLOCK_MONOTONIC, &start_time);
         }
     }
-
-    // check QF consistency
-    puts("");
-    if (qf_is_consistent(&qf)) {
-        fprintf(stdout, "Validated the QF.\n");
-    } else {
-        fprintf(stderr, "QF consistency check failed.\n");
-        abort();
-    }
-    puts("");
 
     // CQF insert / lookup
     probe = 0.05 * nslots;
