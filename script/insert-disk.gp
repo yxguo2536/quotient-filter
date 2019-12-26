@@ -9,7 +9,7 @@ set xtics 0,20,100
 set ytics 0,1000,10000
 set grid
 
-plot [0:100][:10000] 'qf_disk_benchmark' using 1:2 with linespoints \
+plot [0:100][:20000] 'qf_disk_benchmark' using 1:2 with linespoints \
                      linewidth 2 title 'QF', \
                      'cqf_disk_benchmark' using 1:2 with linespoints \
                      linewidth 2 title 'CQF'
