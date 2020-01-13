@@ -25,7 +25,12 @@ plot-mem:
 plot-disk:
 	gnuplot script/insert-disk.gp
 	gnuplot script/lookup-disk.gp
+plot-space:
+	python3 script/space-usage.py > space-usage.txt
+	gnuplot script/space-usage.gp
+	rm space-usage.txt
 
 clean:
 	$(RM) -rf obj/ bench bench2 test data.qf data.cqf *.png \
-			qf_*_benchmark cqf_*_benchmark
+			qf_*_benchmark cqf_*_benchmark \
+			space-analysis.png
